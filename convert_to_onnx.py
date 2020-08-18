@@ -4,11 +4,12 @@ import argparse
 import torch
 import torch.backends.cudnn as cudnn
 import numpy as np
-from data import cfg_mnet, cfg_re50
+from data import cfg_mnet, cfg_re50, cfg_tiny_mnet
 from layers.functions.prior_box import PriorBox
 from utils.nms.py_cpu_nms import py_cpu_nms
 import cv2
 from models.retinaface import RetinaFace
+from models.retinaface_tiny import TinyRetinaFace
 from utils.box_utils import decode, decode_landm
 from utils.timer import Timer
 
@@ -17,7 +18,7 @@ parser = argparse.ArgumentParser(description='Test')
 parser.add_argument('-m', '--trained_model', default='./weights/mobilenet0.25_Final.pth',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--network', default='mobile0.25', help='Backbone network mobile0.25 or resnet50')
-parser.add_argument('--long_side', default=640, help='when origin_size is false, long_side is scaled size(320 or 640 for long side)')
+parser.add_argument('--long_side', default=640, type=int, help='when origin_size is false, long_side is scaled size(320 or 640 for long side)')
 parser.add_argument('--cpu', action="store_true", default=True, help='Use cpu inference')
 
 args = parser.parse_args()
@@ -62,12 +63,17 @@ def load_model(model, pretrained_path, load_to_cpu):
 if __name__ == '__main__':
     torch.set_grad_enabled(False)
     cfg = None
+    # net and cfg
     if args.network == "mobile0.25":
         cfg = cfg_mnet
+        net = RetinaFace(cfg=cfg, phase = 'test')
     elif args.network == "resnet50":
         cfg = cfg_re50
-    # net and model
-    net = RetinaFace(cfg=cfg, phase = 'test')
+        net = RetinaFace(cfg=cfg, phase = 'test')
+    elif args.network == "tiny_mobile0.25":
+        cfg = cfg_tiny_mnet
+        net = TinyRetinaFace(cfg=cfg, phase = 'test')
+    # model
     net = load_model(net, args.trained_model, args.cpu)
     net.eval()
     print('Finished loading model!')
@@ -79,7 +85,7 @@ if __name__ == '__main__':
     output_onnx = 'FaceDetector.onnx'
     print("==> Exporting model to ONNX format at '{}'".format(output_onnx))
     input_names = ["input0"]
-    output_names = ["output0"]
+    output_names = ["output0", "output1", "output2"]
     inputs = torch.randn(1, 3, args.long_side, args.long_side).to(device)
 
     torch_out = torch.onnx._export(net, inputs, output_onnx, export_params=True, verbose=False,

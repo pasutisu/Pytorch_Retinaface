@@ -5,13 +5,14 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import argparse
 import torch.utils.data as data
-from data import WiderFaceDetection, detection_collate, preproc, cfg_mnet, cfg_re50
+from data import WiderFaceDetection, detection_collate, preproc, cfg_mnet, cfg_re50, cfg_tiny_mnet
 from layers.modules import MultiBoxLoss
 from layers.functions.prior_box import PriorBox
 import time
 import datetime
 import math
 from models.retinaface import RetinaFace
+from models.retinaface_tiny import TinyRetinaFace
 
 parser = argparse.ArgumentParser(description='Retinaface Training')
 parser.add_argument('--training_dataset', default='./data/widerface/train/label.txt', help='Training dataset directory')
@@ -30,10 +31,16 @@ args = parser.parse_args()
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 cfg = None
+net = None
 if args.network == "mobile0.25":
     cfg = cfg_mnet
+    net = RetinaFace(cfg=cfg)
 elif args.network == "resnet50":
     cfg = cfg_re50
+    net = RetinaFace(cfg=cfg)
+elif args.network == "tiny_mobile0.25":
+    cfg = cfg_tiny_mnet
+    net = TinyRetinaFace(cfg=cfg)
 
 rgb_mean = (104, 117, 123) # bgr order
 num_classes = 2
@@ -51,7 +58,6 @@ gamma = args.gamma
 training_dataset = args.training_dataset
 save_folder = args.save_folder
 
-net = RetinaFace(cfg=cfg)
 print("Printing net...")
 print(net)
 
@@ -111,6 +117,12 @@ def train():
             if (epoch % 10 == 0 and epoch > 0) or (epoch % 5 == 0 and epoch > cfg['decay1']):
                 torch.save(net.state_dict(), save_folder + cfg['name']+ '_epoch_' + str(epoch) + '.pth')
             epoch += 1
+
+        if (iteration % 1000 == 0):
+            torch.save(
+                net.state_dict(),
+                '{}{}_iter_{}.pth'.format(save_folder, cfg['name'], iteration)
+            )
 
         load_t0 = time.time()
         if iteration in stepvalues:
