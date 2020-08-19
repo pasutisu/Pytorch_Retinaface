@@ -45,12 +45,12 @@ def convert_npz_to_widerface(npz_path, dst_path):
                 landms[idx][36][1],
                 landms[idx][45][0],
                 landms[idx][45][1],
-                landms[idx][31][0],
-                landms[idx][31][1],
-                landms[idx][49][0],
-                landms[idx][49][1],
-                landms[idx][55][0],
-                landms[idx][55][1]
+                landms[idx][30][0],
+                landms[idx][30][1],
+                landms[idx][48][0],
+                landms[idx][48][1],
+                landms[idx][54][0],
+                landms[idx][54][1]
             )
         )
 
