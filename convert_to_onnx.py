@@ -86,6 +86,7 @@ if __name__ == '__main__':
     print("==> Exporting model to ONNX format at '{}'".format(output_onnx))
     input_names = ["input0"]
     output_names = ["output0", "output1", "output2"]
+    # inputs = torch.randn(1, args.long_side, args.long_side, 3).to(device)
     inputs = torch.randn(1, 3, args.long_side, args.long_side).to(device)
 
     torch_out = torch.onnx._export(net, inputs, output_onnx, export_params=True, verbose=False,

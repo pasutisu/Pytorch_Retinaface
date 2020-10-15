@@ -107,6 +107,8 @@ class TinyRetinaFace(nn.Module):
 
     def forward(self,inputs):
         # MobileNetV1(Tiny)
+        # if self.phase != 'train':
+        #     inputs = inputs.permute(0, 3, 1, 2).contiguous()
         out = self.body(inputs)
         out_list = list(out.values())
 
